@@ -39,6 +39,6 @@ with tab4:
     st.subheader("🍄 ヒグチユウコさん情報")
     st.write("公式サイトのNEWS: [HIGUCHI YUKO Official Website](https://higuchiyuko.tokyo/)")
     
-    st.image("[https://cataas.com/ca](https：", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
+    st.image("[https://cataas.com/cat](https://cataas.com/cat)", caption=リロードするたびに違う猫が出ます！", use_container_width=True)
     # 無料の猫画像APIを使用 
     
