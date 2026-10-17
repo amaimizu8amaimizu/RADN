@@ -41,4 +41,4 @@ with tab4:
     
     st.image("[https://cataas.com/cat](https://cataas.com/cat)", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
     # 無料の猫画像APIを使用
-    st.image("[https://cataas.com/cat](https://cataas.com/cat)", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
+    
