@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 import dateutil.parser
 
-st.set_page_config(page_title="My Cinema & Life Hub", layout="wide")
+st.set_page_config(page_title="RADNの箱", layout="wide")
 
 # ==================================================
 # 🎬 映画館スケジュール（サイドバーメニュー）
@@ -150,16 +150,35 @@ def fetch_bluesky_cat_photos(limit=6):
 def fetch_all_items():
     items = []
 
-    # --- 1. Bluesky ---
+    # --- 1. Bluesky (全20館の映画館を個別検索) ---
     bsky_queries = [
-        ("映画", "🎬 映画"),
-        ("名画座", "🎬 名画座"),
+        ("アップリンク吉祥寺", "🎬 アップリンク吉祥寺"),
+        ("早稲田松竹", "🎬 早稲田松竹"),
+        ("新文芸坐", "🎬 新文芸坐"),
+        ("キネカ大森", "🎬 キネカ大森"),
+        ("シネマート新宿", "🎬 シネマート新宿"),
+        ("ケイズシネマ", "🎬 ケイズシネマ"),
+        ("シネマカリテ", "🎬 シネマカリテ"),
+        ("新宿武蔵野館", "🎬 新宿武蔵野館"),
+        ("目黒シネマ", "🎬 目黒シネマ"),
+        ("下高井戸シネマ", "🎬 下高井戸シネマ"),
+        ("Stranger 映画館", "🎬 Stranger"),
+        ("テアトルシネマ", "🎬 テアトルシネマ"),
+        ("ヒューマントラストシネマ渋谷", "🎬 HTシネマ渋谷"),
+        ("ヒューマントラストシネマ有楽町", "🎬 HTシネマ有楽町"),
+        ("HUMAX CINEMA", "🎬 HUMAX CINEMA"),
+        ("イメージフォーラム", "🎬 イメージフォーラム"),
+        ("シネクイント", "🎬 シネクイント"),
+        ("ユーロスペース", "🎬 ユーロスペース"),
+        ("シネマヴェーラ", "🎬 シネマヴェーラ"),
+        ("シネマシティ", "🎬 シネマシティ"),
         ("御朱印", "⛩️ 御朱印"),
         ("ヒグチユウコ", "🎨 ヒグチユウコ"),
         ("多肉植物", "🌵 多肉植物")
     ]
+    
     for q, tag in bsky_queries:
-        posts = fetch_bluesky_raw(q, limit=3)
+        posts = fetch_bluesky_raw(q, limit=2)
         for post_item in posts:
             record = post_item.get("record", {})
             author = post_item.get("author", {})
@@ -196,7 +215,7 @@ def fetch_all_items():
             encoded_query = urllib.parse.quote(q)
             rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ja&gl=JP&ceid=JP:ja"
             feed = feedparser.parse(rss_url)
-            for entry in feed.entries[:3]:
+            for entry in feed.entries[:2]:
                 img_url = None
                 if "summary" in entry:
                     match = re.search(r'src="([^"]+)"', entry.summary)
@@ -228,7 +247,7 @@ def fetch_all_items():
             encoded_kw = urllib.parse.quote(kw)
             rss_url = f"https://note.com/hashtag/{encoded_kw}/rss"
             feed = feedparser.parse(rss_url)
-            for entry in feed.entries[:3]:
+            for entry in feed.entries[:2]:
                 img_url = None
                 if hasattr(entry, 'media_thumbnail') and len(entry.media_thumbnail) > 0:
                     img_url = entry.media_thumbnail[0]['url']
@@ -287,14 +306,4 @@ if not all_items:
 else:
     for item in all_items:
         col1, col2 = st.columns([1, 3])
-        with col1:
-            if item.get("image"):
-                st.image(item["image"], use_container_width=True)
-            else:
-                st.markdown("🖼️ *(画像なし)*")
-        with col2:
-            st.caption(f"**{item['source']}** {('・ ' + item['date_str']) if item['date_str'] else ''}")
-            st.markdown(f'<a href="{item["link"]}" target="_blank" rel="noopener noreferrer">**{item["title"]}**</a>', unsafe_allow_html=True)
-            if item.get("author"):
-                st.caption(f"by {item['author']}")
-        st.write("---")
+        with
