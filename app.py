@@ -9,7 +9,7 @@ st.set_page_config(page_title="My Cinema & Life Hub", layout="wide")
 st.title("🎬 My Cinema & Life Hub")
 
 # --------------------------------------------------
-# 補助関数：Bluesky 投稿取得
+# 補助関数：Bluesky 投稿取得（検索ロジック改善版）
 # --------------------------------------------------
 def get_bluesky_posts(query, limit=3):
     url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
@@ -27,7 +27,6 @@ def get_bluesky_posts(query, limit=3):
                 handle = author.get("handle", "")
                 post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
                 
-                # 画像が含まれている場合は取得
                 embed = item.get("embed", {})
                 img_url = None
                 if "images" in embed and len(embed["images"]) > 0:
@@ -53,7 +52,6 @@ def get_google_news(query, limit=3):
     feed = feedparser.parse(rss_url)
     articles = []
     for entry in feed.entries[:limit]:
-        # RSS内のimgタグから画像URLを簡易抽出
         img_url = None
         if "summary" in entry:
             match = re.search(r'src="([^"]+)"', entry.summary)
@@ -104,7 +102,6 @@ def get_reddit_posts(subreddit, limit=3):
                 if pdata.get("stickied"):
                     continue
                 img_url = pdata.get("url", "")
-                # 画像URLか判別 (.jpg, .png など)
                 if not any(img_url.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".gif"]):
                     img_url = None
                 posts.append({
@@ -122,6 +119,11 @@ def get_reddit_posts(subreddit, limit=3):
 # 表示用共通関数（画像付きカード描画）
 # --------------------------------------------------
 def render_card_list(items):
+    if not items:
+        st.caption("※該当する投稿が見つかりませんでした。")
+        st.write("---")
+        return
+        
     for item in items:
         col1, col2 = st.columns([1, 3])
         with col1:
@@ -144,13 +146,13 @@ def render_card_list(items):
 st.header("🎬 旧作・名画座 上映情報 & 映画コラム")
 
 st.subheader("📰 Googleニュース")
-render_card_list(get_google_news("名画座 OR リバイバル上映 OR 午前10時の映画祭", limit=3))
+render_card_list(get_google_news("名画座", limit=3))
 
 st.subheader("📝 Note (映画感想・コラム)")
 render_card_list(get_note_posts("映画鑑賞", limit=3))
 
 st.subheader("🦋 Blueskyでの話題")
-render_card_list(get_bluesky_posts("名画座 OR リバイバル上映 OR 午前10時の映画祭 OR 旧作上映", limit=3))
+render_card_list(get_bluesky_posts("名画座", limit=3))
 
 
 # ==================================================
@@ -159,7 +161,7 @@ render_card_list(get_bluesky_posts("名画座 OR リバイバル上映 OR 午前
 st.header("🏛️ 美術館・博物館 展示情報")
 
 st.subheader("📰 展覧会ニュース")
-render_card_list(get_google_news("美術館 OR 博物館 OR 特別展 OR 企画展", limit=3))
+render_card_list(get_google_news("特別展", limit=3))
 
 st.subheader("📝 Note (美術展レポート)")
 render_card_list(get_note_posts("美術展", limit=3))
@@ -171,13 +173,13 @@ render_card_list(get_note_posts("美術展", limit=3))
 st.header("⛩️ 御朱印・神社仏閣 情報")
 
 st.subheader("📰 御朱印ニュース")
-render_card_list(get_google_news("御朱印 OR 限定御朱印", limit=3))
+render_card_list(get_google_news("御朱印", limit=3))
 
 st.subheader("📝 Note (御朱印巡りレポ)")
 render_card_list(get_note_posts("御朱印", limit=3))
 
 st.subheader("🦋 Blueskyの投稿")
-render_card_list(get_bluesky_posts("御朱印 OR 限定御朱印", limit=3))
+render_card_list(get_bluesky_posts("御朱印", limit=3))
 
 
 # ==================================================
