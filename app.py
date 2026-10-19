@@ -101,50 +101,31 @@ def fetch_bluesky_raw(query, limit=5):
 
 
 # --------------------------------------------------
-# Bluesky 投稿から画像URLを漏れなく抽出する関数
-# --------------------------------------------------
-def extract_bsky_image(embed):
-    if not embed:
-        return None
-    
-    embed_type = embed.get("$type", "")
-
-    # 1. 通常の添付画像
-    if "images" in embed and len(embed["images"]) > 0:
-        return embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
-
-    # 2. 外部Webリンクのカード（サムネイル画像）
-    if "external" in embed and isinstance(embed["external"], dict):
-        return embed["external"].get("thumb")
-
-    # 3. メディア付き引用・ポスト
-    if embed_type == "app.bsky.embed.recordWithMedia#view":
-        media = embed.get("media", {})
-        if "images" in media and len(media["images"]) > 0:
-            return media["images"][0].get("fullsize") or media["images"][0].get("thumb")
-        if "external" in media and isinstance(media["external"], dict):
-            return media["external"].get("thumb")
-
-    return None
-
-
-# --------------------------------------------------
-# 1. 猫ギャラリー用 Bluesky 取得（ランダムシャッフル機能付き）
+# 1. 猫ギャラリー用 Bluesky 取得（インスタ誘導除外・純粋写真のみ）
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
     cat_photos = []
     posts = fetch_bluesky_raw("#猫のいる暮らし OR #猫 OR #愛猫", limit=50)
-    ng_words = ["ハイキュー", "音駒", "コスプレ", "イラスト", "二次創作", "VTuber", "アクスタ", "フィギュア"]
+    ng_words = ["ハイキュー", "音駒", "コスプレ", "イラスト", "二次創作", "VTuber", "アクスタ", "フィギュア", "instagram.com", "インスタ"]
 
     for post_item in posts:
         record = post_item.get("record", {})
         text = record.get("text", "")
 
+        # NGワードやインスタグラムのリンクが含まれている場合は除外
         if any(ng in text for ng in ng_words):
             continue
 
         embed = post_item.get("embed", {})
-        img_url = extract_bsky_image(embed)
+        img_url = None
+        
+        # 純粋にBlueskyに直接投稿された画像のみを取得（リンクカード画像のアイコン除外）
+        if "images" in embed and len(embed["images"]) > 0:
+            img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
+        elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
+            media = embed.get("media", {})
+            if "images" in media and len(media["images"]) > 0:
+                img_url = media["images"][0].get("fullsize") or media["images"][0].get("thumb")
 
         if img_url:
             author = post_item.get("author", {})
@@ -210,6 +191,12 @@ def fetch_all_items():
         posts = fetch_bluesky_raw(q, limit=2)
         for post_item in posts:
             record = post_item.get("record", {})
+            text = record.get("text", "")
+            
+            # インスタリンクの投稿はタイムラインからも除外
+            if "instagram.com" in text:
+                continue
+
             author = post_item.get("author", {})
             uri_parts = post_item.get("uri", "").split("/")
             rkey = uri_parts[-1] if uri_parts else ""
@@ -217,11 +204,13 @@ def fetch_all_items():
             post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
             
             embed = post_item.get("embed", {})
-            img_url = extract_bsky_image(embed)
+            img_url = None
+            if "images" in embed and len(embed["images"]) > 0:
+                img_url = embed["images"][0].get("fullsize")
 
             created_at = record.get("createdAt", "")
             items.append({
-                "title": record.get("text", ""),
+                "title": text,
                 "link": post_url,
                 "image": img_url,
                 "source": f"🦋 Bluesky ({tag})",
