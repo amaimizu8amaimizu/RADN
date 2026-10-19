@@ -67,7 +67,49 @@ st.write("---")
 
 
 # ==================================================
-# 2. 🎨 ヒグチユウコ 最新情報
+# 2. 🏛️ 美術館・博物館の展示情報
+# ==================================================
+st.header("🏛️ 美術館・博物館 展示情報")
+
+st.subheader("📰 ニュース・Web記事")
+art_news = get_google_news("美術館 OR 博物館 OR 特別展 OR 企画展", limit=3)
+for entry in art_news:
+    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+
+st.subheader("🦋 Blueskyでの話題")
+art_posts = get_bluesky_posts("美術館 OR 博物館 OR 特別展 OR 企画展", limit=3)
+for p in art_posts:
+    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
+    st.write(p["text"])
+    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
+    st.write("---")
+
+st.write("---")
+
+
+# ==================================================
+# 3. ⛩️ 御朱印 情報
+# ==================================================
+st.header("⛩️ 御朱印・神社仏閣 情報")
+
+st.subheader("📰 ニュース・Web記事")
+goshuin_news = get_google_news("御朱印 OR 限定御朱印", limit=3)
+for entry in goshuin_news:
+    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+
+st.subheader("🦋 Blueskyでの話題")
+goshuin_posts = get_bluesky_posts("御朱印 OR 限定御朱印", limit=3)
+for p in goshuin_posts:
+    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
+    st.write(p["text"])
+    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
+    st.write("---")
+
+st.write("---")
+
+
+# ==================================================
+# 4. 🎨 ヒグチユウコ 最新情報
 # ==================================================
 st.header("🎨 ヒグチユウコ 最新情報")
 
@@ -88,28 +130,7 @@ st.write("---")
 
 
 # ==================================================
-# 3. 🐾 猫の話題
-# ==================================================
-st.header("🐾 猫の話題")
-
-st.subheader("📰 猫のニュース・記事")
-cat_news = get_google_news("猫 話題 OR 保護猫", limit=3)
-for entry in cat_news:
-    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
-
-st.subheader("🦋 Blueskyの投稿")
-cat_posts = get_bluesky_posts("猫", limit=3)
-for p in cat_posts:
-    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
-    st.write(p["text"])
-    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
-    st.write("---")
-
-st.write("---")
-
-
-# ==================================================
-# 4. 🌵 多肉植物
+# 5. 🌵 多肉植物
 # ==================================================
 st.header("🌵 多肉植物")
 
@@ -130,7 +151,20 @@ st.write("---")
 
 
 # ==================================================
-# 5. 📷 本日の猫ちゃん（ランダム画像）
+# 6. 🐾 猫のつぶやき & 本日の猫ちゃん
+# ==================================================
+st.header("🐾 猫の話題 & 本日の猫ちゃん")
+
+st.subheader("🦋 Blueskyでの猫の話題")
+cat_posts = get_bluesky_posts("猫", limit=3)
+for p in cat_posts:
+    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
+    st.write(p["text"])
+    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
+    st.write("---")
+
+st.subheader("📷 本日の猫ちゃん")
+st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
 # ==================================================
 st.header("📷 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
