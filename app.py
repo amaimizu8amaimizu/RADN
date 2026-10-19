@@ -61,20 +61,19 @@ def parse_date(date_str):
 
 
 # --------------------------------------------------
-# Bluesky 日本の猫画像投稿 取得関数
+# Bluesky 日本の猫画像投稿 取得関数（Bluesky専用・安全版）
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
     cat_photos = []
     try:
         url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
-        # 「猫」や「ねこ」で最新画像付き投稿を検索
-        res = requests.get(url, params={"q": "猫", "limit": 25}, timeout=5)
+        # 検索キーワードを最適化
+        res = requests.get(url, params={"q": "猫 OR ねこ", "limit": 25}, timeout=4)
         if res.status_code == 200:
             for post_item in res.json().get("posts", []):
                 embed = post_item.get("embed", {})
                 img_url = None
                 
-                # 画像の抽出処理
                 if "images" in embed and len(embed["images"]) > 0:
                     img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
                 elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
@@ -97,7 +96,6 @@ def fetch_bluesky_cat_photos(limit=6):
                         "title": display_text,
                         "link": post_url,
                         "image": img_url,
-                        "author": author.get("displayName") or handle,
                         "source": f"🦋 Bluesky (@{handle})"
                     })
                     if len(cat_photos) >= limit:
@@ -130,7 +128,7 @@ def fetch_all_items():
     for q, tag in bsky_queries:
         try:
             url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
-            res = requests.get(url, params={"q": q, "limit": 3}, timeout=5)
+            res = requests.get(url, params={"q": q, "limit": 3}, timeout=3)
             if res.status_code == 200:
                 for post_item in res.json().get("posts", []):
                     record = post_item.get("record", {})
@@ -241,7 +239,7 @@ if cat_photos:
             st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"]}</a>', unsafe_allow_html=True)
             st.write("---")
 else:
-    st.caption("※Blueskyから猫画像の投稿を読み込み中...")
+    st.info("※現在Blueskyから最新の猫画像投稿を探しています。少々お待ちいただくか、再読み込みをお試しください。")
 
 st.write("---")
 
