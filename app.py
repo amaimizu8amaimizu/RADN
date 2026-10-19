@@ -3,6 +3,7 @@ import feedparser
 import requests
 import urllib.parse
 import re
+import random
 from datetime import datetime, timezone
 import dateutil.parser
 
@@ -100,11 +101,12 @@ def fetch_bluesky_raw(query, limit=5):
 
 
 # --------------------------------------------------
-# 1. 猫ギャラリー用 Bluesky 取得（リアル猫フィルター付き）
+# 1. 猫ギャラリー用 Bluesky 取得（ランダムシャッフル機能付き）
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
     cat_photos = []
-    posts = fetch_bluesky_raw("#猫のいる暮らし OR #猫 OR #愛猫", limit=30)
+    # 多めに取得してシャッフルできるようにする（limit=50）
+    posts = fetch_bluesky_raw("#猫のいる暮らし OR #猫 OR #愛猫", limit=50)
     ng_words = ["ハイキュー", "音駒", "コスプレ", "イラスト", "二次創作", "VTuber", "アクスタ", "フィギュア"]
 
     for post_item in posts:
@@ -139,9 +141,12 @@ def fetch_bluesky_cat_photos(limit=6):
                 "image": img_url,
                 "source": f"🦋 Bluesky (@{handle})"
             })
-            if len(cat_photos) >= limit:
-                break
-    return cat_photos
+
+    # 開くたびに順番が変わるようランダムでシャッフル
+    random.shuffle(cat_photos)
+
+    # シャッフル後、指定数（6枚）だけ抽出
+    return cat_photos[:limit]
 
 
 # --------------------------------------------------
