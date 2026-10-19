@@ -105,7 +105,6 @@ def fetch_bluesky_raw(query, limit=5):
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
     cat_photos = []
-    # 多めに取得してシャッフルできるようにする（limit=50）
     posts = fetch_bluesky_raw("#猫のいる暮らし OR #猫 OR #愛猫", limit=50)
     ng_words = ["ハイキュー", "音駒", "コスプレ", "イラスト", "二次創作", "VTuber", "アクスタ", "フィギュア"]
 
@@ -142,10 +141,7 @@ def fetch_bluesky_cat_photos(limit=6):
                 "source": f"🦋 Bluesky (@{handle})"
             })
 
-    # 開くたびに順番が変わるようランダムでシャッフル
     random.shuffle(cat_photos)
-
-    # シャッフル後、指定数（6枚）だけ抽出
     return cat_photos[:limit]
 
 
@@ -183,7 +179,10 @@ def fetch_all_items():
         ("ヒグチユウコ", "🎨 ヒグチユウコ"),
         ("多肉植物", "🌵 多肉植物"),
         ("かき氷", "🍧 かき氷"),
-        ("アイス OR コンビニアイス OR アイスクリーム", "🍦 アイス・スイーツ")
+        ("アイス OR コンビニアイス OR アイスクリーム", "🍦 アイス・スイーツ"),
+        ("話題のスイーツ OR パフェ OR カフェ巡り", "🍰 話題のスイーツ・カフェ"),
+        ("話題のレストラン OR 話題のグルメ", "🍽️ 話題のグルメ・レストラン"),
+        ("話題のスポット OR おすすめスポット", "📍 話題のスポット")
     ]
     
     for q, tag in bsky_queries:
@@ -218,7 +217,10 @@ def fetch_all_items():
         ("美術館 OR 博物館 OR 特別展", "🏛️ 展示・博物館"),
         ("御朱印", "⛩️ 御朱印"),
         ("ヒグチユウコ", "🎨 ヒグチユウコ"),
-        ("かき氷 OR アイスクリーム OR 定番アイス OR 新作アイス", "🍧 かき氷・アイス")
+        ("かき氷 OR アイスクリーム OR 定番アイス OR 新作アイス", "🍧 かき氷・アイス"),
+        ("話題のスイーツ OR 新着カフェ OR 注目のスイーツ", "🍰 話題のスイーツ"),
+        ("話題のレストラン OR 行列グルメ OR 新宿グルメ OR 渋谷グルメ", "🍽️ 話題のレストラン・グルメ"),
+        ("話題のスポット OR お出かけスポット OR 新施設オープン", "📍 話題のスポット")
     ]
     for q, tag in news_queries:
         try:
@@ -253,75 +255,11 @@ def fetch_all_items():
         ("御朱印", "⛩️ 御朱印"),
         ("多肉植物", "🌵 多肉植物"),
         ("かき氷", "🍧 かき氷"),
-        ("アイス", "🍦 アイス"),
-        ("アイスクリーム", "🍦 アイスクリーム")
+        ("アイスクリーム", "🍦 アイス"),
+        ("スイーツ", "🍰 スイーツ"),
+        ("カフェ巡り", "☕ カフェめぐり"),
+        ("グルメ", "🍽️ グルメ"),
+        ("おでかけスポット", "📍 お出かけスポット")
     ]
     for kw, tag in note_tags:
-        try:
-            encoded_kw = urllib.parse.quote(kw)
-            rss_url = f"https://note.com/hashtag/{encoded_kw}/rss"
-            feed = feedparser.parse(rss_url)
-            for entry in feed.entries[:2]:
-                img_url = None
-                if hasattr(entry, 'media_thumbnail') and len(entry.media_thumbnail) > 0:
-                    img_url = entry.media_thumbnail[0]['url']
-                elif 'enclosures' in entry and len(entry.enclosures) > 0:
-                    img_url = entry.enclosures[0]['href']
-
-                published = getattr(entry, "published", "")
-                items.append({
-                    "title": entry.title,
-                    "link": entry.link,
-                    "image": img_url,
-                    "source": f"📝 Note ({tag})",
-                    "author": getattr(entry, "author", None),
-                    "date": parse_date(published),
-                    "date_str": published[:10] if published else ""
-                })
-        except Exception:
-            pass
-
-    items.sort(key=lambda x: x["date"], reverse=True)
-    return items
-
-
-# ==================================================
-# 1. 🐾 街とSNSのリアル猫ちゃんギャラリー (Bluesky)
-# ==================================================
-if st.secrets.get("BSKY_HANDLE") and st.secrets.get("BSKY_PASSWORD"):
-    cat_photos = fetch_bluesky_cat_photos(limit=6)
-
-    if cat_photos:
-        cols = st.columns(3)
-        for idx, photo in enumerate(cat_photos):
-            with cols[idx % 3]:
-                st.image(photo["image"], use_container_width=True)
-                st.caption(f"**{photo['source']}**")
-                st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"]}</a>', unsafe_allow_html=True)
-                st.write("---")
-
-st.write("---")
-
-
-# ==================================================
-# 2. 📰 最新タイムライン
-# ==================================================
-st.header("📰 最新タイムライン")
-all_items = fetch_all_items()
-
-if not all_items:
-    st.info("データの取得に失敗したか、現在表示できる投稿がありません。")
-else:
-    for item in all_items:
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            if item.get("image"):
-                st.image(item["image"], use_container_width=True)
-            else:
-                st.markdown("🖼️ *(画像なし)*")
-        with col2:
-            st.caption(f"**{item['source']}** {('・ ' + item['date_str']) if item['date_str'] else ''}")
-            st.markdown(f'<a href="{item["link"]}" target="_blank" rel="noopener noreferrer">**{item["title"]}**</a>', unsafe_allow_html=True)
-            if item.get("author"):
-                st.caption(f"by {item['author']}")
-        st.write("---")
+        try
