@@ -3,7 +3,7 @@ import streamlit as st
 import feedparser
 import requests
 
-st.title("🎬 My Cinema & Life Hub")
+st.title("RADNの箱")
 
 # --------------------------------------------------
 # Bluesky 投稿取得用関数
