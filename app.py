@@ -1,14 +1,14 @@
-
 import streamlit as st
 import feedparser
 import requests
+import urllib.parse
 
 st.title("🎬 My Cinema & Life Hub")
 
 # --------------------------------------------------
 # Bluesky 投稿取得用関数
 # --------------------------------------------------
-def get_bluesky_posts(query, limit=5):
+def get_bluesky_posts(query, limit=3):
     url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
     params = {"q": query, "limit": limit}
     posts = []
@@ -35,52 +35,102 @@ def get_bluesky_posts(query, limit=5):
         st.error(f"Blueskyのデータ取得エラー: {e}")
     return posts
 
+# --------------------------------------------------
+# Googleニュース RSS取得用関数
+# --------------------------------------------------
+def get_google_news(query, limit=3):
+    encoded_query = urllib.parse.quote(query)
+    rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ja&gl=JP&ceid=JP:ja"
+    feed = feedparser.parse(rss_url)
+    return feed.entries[:limit]
 
-# 1. 🎬 名画座・クラシック映画 上映情報（Bluesky検索）
+
+# ==================================================
+# 1. 🎬 旧作・名画座・映画の上映情報
+# ==================================================
 st.header("🎬 旧作・名画座 上映情報")
-movie_classic_posts = get_bluesky_posts("名画座 OR リバイバル上映 OR 午前10時の映画祭 OR 旧作上映", limit=5)
-for p in movie_classic_posts:
+
+st.subheader("📰 ニュース・Web記事")
+movie_news = get_google_news("名画座 OR リバイバル上映 OR 午前10時の映画祭", limit=3)
+for entry in movie_news:
+    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+
+st.subheader("🦋 Blueskyでの話題")
+movie_posts = get_bluesky_posts("名画座 OR リバイバル上映 OR 午前10時の映画祭 OR 旧作上映", limit=3)
+for p in movie_posts:
     st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
     st.write(p["text"])
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 2. 🍿 映画コラム・クラシック映画の話題（Bluesky検索）
-st.header("🍿 映画コラム・クラシック映画の話題")
-movie_review_posts = get_bluesky_posts("映画 考察 OR 映画 レビュー OR シネマカリテ OR ル・シネマ", limit=5)
-for p in movie_review_posts:
-    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
-    st.write(p["text"])
-    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
-    st.write("---")
+st.write("---")
 
-# 3. 🎨 ヒグチユウコ 最新の話題（Bluesky検索）
+
+# ==================================================
+# 2. 🎨 ヒグチユウコ 最新情報
+# ==================================================
 st.header("🎨 ヒグチユウコ 最新情報")
-higuchi_posts = get_bluesky_posts("ヒグチユウコ", limit=5)
+
+st.subheader("📰 ニュース・関連Web記事")
+higuchi_news = get_google_news("ヒグチユウコ", limit=3)
+for entry in higuchi_news:
+    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+
+st.subheader("🦋 Blueskyでの話題")
+higuchi_posts = get_bluesky_posts("ヒグチユウコ", limit=3)
 for p in higuchi_posts:
     st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
     st.write(p["text"])
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 4. 🐾 猫の話題（Bluesky検索）
+st.write("---")
+
+
+# ==================================================
+# 3. 🐾 猫の話題
+# ==================================================
 st.header("🐾 猫の話題")
-cat_posts = get_bluesky_posts("猫", limit=5)
+
+st.subheader("📰 猫のニュース・記事")
+cat_news = get_google_news("猫 話題 OR 保護猫", limit=3)
+for entry in cat_news:
+    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+
+st.subheader("🦋 Blueskyの投稿")
+cat_posts = get_bluesky_posts("猫", limit=3)
 for p in cat_posts:
     st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
     st.write(p["text"])
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 5. 🌵 多肉植物（Bluesky検索）
+st.write("---")
+
+
+# ==================================================
+# 4. 🌵 多肉植物
+# ==================================================
 st.header("🌵 多肉植物")
-succulent_posts = get_bluesky_posts("多肉植物", limit=5)
+
+st.subheader("📰 多肉植物のニュース・記事")
+succulent_news = get_google_news("多肉植物", limit=3)
+for entry in succulent_news:
+    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+
+st.subheader("🦋 Blueskyの投稿")
+succulent_posts = get_bluesky_posts("多肉植物", limit=3)
 for p in succulent_posts:
     st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
     st.write(p["text"])
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 6. 📷 本日の猫ちゃん（ランダム画像）
+st.write("---")
+
+
+# ==================================================
+# 5. 📷 本日の猫ちゃん（ランダム画像）
+# ==================================================
 st.header("📷 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
