@@ -61,45 +61,26 @@ def parse_date(date_str):
 
 
 # --------------------------------------------------
-# 猫画像専用取得関数（Reddit & Bluesky）
+# 猫画像専用取得関数（強化版）
 # --------------------------------------------------
 def fetch_cat_photos(limit=6):
     cat_photos = []
 
-    # 1. Reddit から画像付き投稿を取得 (r/cats, r/SupermodelCats)
-    subs = ["cats", "SupermodelCats"]
-    for sub in subs:
-        try:
-            url = f"https://www.reddit.com/r/{sub}/hot.json?limit=10"
-            headers = {"User-Agent": "Mozilla/5.0"}
-            res = requests.get(url, headers=headers, timeout=5)
-            if res.status_code == 200:
-                for child in res.json().get("data", {}).get("children", []):
-                    pdata = child.get("data", {})
-                    if pdata.get("stickied"):
-                        continue
-                    img_url = pdata.get("url", "")
-                    if any(img_url.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]) or "i.redd.it" in img_url:
-                        cat_photos.append({
-                            "title": pdata.get("title", "Reddit Cat"),
-                            "link": f"https://reddit.com{pdata.get('permalink')}",
-                            "image": img_url,
-                            "source": f"🌍 Reddit (r/{sub})"
-                        })
-        except Exception:
-            pass
-
-    # 2. Bluesky から画像付き「猫」投稿を取得
+    # 1. Bluesky から画像付き「猫」投稿を取得
     try:
         url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
-        res = requests.get(url, params={"q": "猫", "limit": 10}, timeout=5)
+        res = requests.get(url, params={"q": "猫", "limit": 15}, timeout=5)
         if res.status_code == 200:
             for post_item in res.json().get("posts", []):
                 embed = post_item.get("embed", {})
                 img_url = None
                 if "images" in embed and len(embed["images"]) > 0:
-                    img_url = embed["images"][0].get("fullsize")
-                
+                    img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
+                elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
+                    media = embed.get("media", {})
+                    if "images" in media and len(media["images"]) > 0:
+                        img_url = media["images"][0].get("fullsize") or media["images"][0].get("thumb")
+
                 if img_url:
                     record = post_item.get("record", {})
                     author = post_item.get("author", {})
@@ -109,13 +90,45 @@ def fetch_cat_photos(limit=6):
                     post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
 
                     cat_photos.append({
-                        "title": record.get("text", "Bluesky 猫"),
+                        "title": record.get("text", "Bluesky 猫")[:40],
                         "link": post_url,
                         "image": img_url,
                         "source": f"🦋 Bluesky (@{handle})"
                     })
     except Exception:
         pass
+
+    # 2. Reddit (r/cats) から取得
+    try:
+        url = "https://www.reddit.com/r/cats/hot.json?limit=10"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            for child in res.json().get("data", {}).get("children", []):
+                pdata = child.get("data", {})
+                if pdata.get("stickied"):
+                    continue
+                img_url = pdata.get("url", "")
+                if "i.redd.it" in img_url or "imgur.com" in img_url:
+                    cat_photos.append({
+                        "title": pdata.get("title", "Reddit Cat")[:40],
+                        "link": f"https://reddit.com{pdata.get('permalink')}",
+                        "image": img_url,
+                        "source": "🌍 Reddit (r/cats)"
+                    })
+    except Exception:
+        pass
+
+    # 3. 件数が足りない場合、自動生成猫APIで補完（絶対に空白にしない）
+    backup_count = 0
+    while len(cat_photos) < limit and backup_count < 6:
+        backup_count += 1
+        cat_photos.append({
+            "title": "本日の猫ちゃん",
+            "link": "https://cataas.com",
+            "image": f"https://cataas.com/cat?unique={backup_count}",
+            "source": "📷 本日の猫ちゃん"
+        })
 
     return cat_photos[:limit]
 
@@ -126,7 +139,7 @@ def fetch_cat_photos(limit=6):
 def fetch_all_items():
     items = []
 
-    # --- 1. Bluesky (名画座・単館映画館のキーワードを追加) ---
+    # --- 1. Bluesky ---
     bsky_queries = [
         ("名画座", "🎬 名画座"),
         ("早稲田松竹", "🎬 映画館"),
@@ -244,16 +257,13 @@ def fetch_all_items():
 st.header("🐾 街と世界の猫ちゃんギャラリー")
 cat_photos = fetch_cat_photos(limit=6)
 
-if cat_photos:
-    cols = st.columns(3)
-    for idx, photo in enumerate(cat_photos):
-        with cols[idx % 3]:
-            st.image(photo["image"], use_container_width=True)
-            st.caption(f"**{photo['source']}**")
-            st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"][:40]}...</a>', unsafe_allow_html=True)
-            st.write("---")
-else:
-    st.caption("※猫画像の読み込み中、または投稿が見つかりませんでした。")
+cols = st.columns(3)
+for idx, photo in enumerate(cat_photos):
+    with cols[idx % 3]:
+        st.image(photo["image"], use_container_width=True)
+        st.caption(f"**{photo['source']}**")
+        st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"]}</a>', unsafe_allow_html=True)
+        st.write("---")
 
 st.write("---")
 
