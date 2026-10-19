@@ -36,34 +36,35 @@ def get_bluesky_posts(query, limit=5):
     return posts
 
 
-# 1. 映画ニュース・上映情報
-st.header("映画ニュース・上映情報")
-feed = feedparser.parse('https://eiga.com/news/feed/')
-for entry in feed.entries[:5]:
-    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">**{entry.title}**</a>', unsafe_allow_html=True)
+# 1. 🎬 名画座・クラシック映画 上映情報（Bluesky検索）
+st.header("🎬 旧作・名画座 上映情報")
+movie_classic_posts = get_bluesky_posts("名画座 OR リバイバル上映 OR 午前10時の映画祭 OR 旧作上映", limit=5)
+for p in movie_classic_posts:
+    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
+    st.write(p["text"])
+    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-st.write("※後ほどここに、シネマカリテやル・シネマなど名小座の更新情報も追加できます。")
-st.write("---")
-
-# 2. 映画コラム・SNS
-st.header("映画コラム・SNS")
-st.write("エリオ・ペルティ監督のようなマニアックな作品の解説や、お気に入りの映画評論家の更新をここにまとめます。")
-st.write("🍿 **ピックアップ記事**")
-feed_note = feedparser.parse('https://note.com/topic/cinema/rss')
-for entry in feed_note.entries[:5]:
-    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">{entry.title}</a>', unsafe_allow_html=True)
+# 2. 🍿 映画コラム・感想（Bluesky検索）
+st.header("🍿 映画コラム・クラシック映画の話題")
+movie_review_posts = get_bluesky_posts("映画 考察 OR 映画 レビュー OR シネマカリテ OR ル・シネマ", limit=5)
+for p in movie_review_posts:
+    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
+    st.write(p["text"])
+    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 3. 話題のニュース
-st.header("話題のニュース")
-feed_hatebu = feedparser.parse('https://b.hatena.ne.jp/hotentry/entertainment.rss')
-for entry in feed_hatebu.entries[:5]:
-    st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">{entry.title}</a>', unsafe_allow_html=True)
+# 3. 🎨 ヒグチユウコ 最新の話題（Bluesky検索）
+st.header("🎨 ヒグチユウコ 最新情報")
+higuchi_posts = get_bluesky_posts("ヒグチユウコ", limit=5)
+for p in higuchi_posts:
+    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
+    st.write(p["text"])
+    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 4. Bluesky：猫
-st.header("🦋 Bluesky：猫")
+# 4. 🐱 猫（Bluesky検索）
+st.header("🐾 猫の話題")
 cat_posts = get_bluesky_posts("猫", limit=5)
 for p in cat_posts:
     st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
@@ -71,8 +72,8 @@ for p in cat_posts:
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 5. Bluesky：多肉植物
-st.header("🦋 Bluesky：多肉植物")
+# 5. 🌵 多肉植物（Bluesky検索）
+st.header("🌵 多肉植物")
 succulent_posts = get_bluesky_posts("多肉植物", limit=5)
 for p in succulent_posts:
     st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
@@ -80,20 +81,9 @@ for p in succulent_posts:
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 6. Bluesky：これから上映する映画
-st.header("🦋 Bluesky：これから上映する映画")
-movie_posts = get_bluesky_posts("これから上映する映画 OR 公開予定 映画", limit=5)
-for p in movie_posts:
-    st.markdown(f"**{p['author']}** (`@{p['handle']}`)")
-    st.write(p["text"])
-    st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
-    st.write("---")
-
-# 7. ヒグチユウコ 最新情報
-st.header("ヒグチユウコ 最新情報")
-st.markdown('• <a href="https://higuchiyuko.tokyo/" target="_blank" rel="noopener noreferrer">公式サイトのNEWS: HIGUCHI YUKO Official Website</a>', unsafe_allow_html=True)
-st.write("---")
-
+# 6. 本日の猫ちゃん（ランダム画像）
+st.header("📷 本日の猫ちゃん")
+st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
 # 8. 本日の猫ちゃん
 st.header("🐾 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
