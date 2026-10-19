@@ -3,7 +3,7 @@ import streamlit as st
 import feedparser
 import requests
 
-st.title("RADNの箱")
+st.title("🎬 My Cinema & Life Hub")
 
 # --------------------------------------------------
 # Bluesky 投稿取得用関数
@@ -83,6 +83,4 @@ for p in succulent_posts:
 
 # 6. 📷 本日の猫ちゃん（ランダム画像）
 st.header("📷 本日の猫ちゃん")
-st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
-st.header("🐾 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
