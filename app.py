@@ -8,6 +8,41 @@ import dateutil.parser
 
 st.set_page_config(page_title="My Cinema & Life Hub", layout="wide")
 
+# ==================================================
+# 🎬 映画館スケジュール（サイドバーメニュー）
+# ==================================================
+st.sidebar.header("🎬 映画館スケジュール")
+
+theaters = [
+    ("アップリンク吉祥寺", "https://joji.uplink.co.jp/"),
+    ("早稲田松竹", "http://wasedashotiku.com/"),
+    ("新文芸坐", "https://www.shin-bungeiza.com/"),
+    ("キネカ大森", "https://ttcg.jp/kineka_oomori/"),
+    ("シネマート新宿", "https://www.cinemart.co.jp/theater/shinjuku/"),
+    ("ケイズシネマ", "https://www.ks-cinema.com/"),
+    ("新宿シネマカリテ", "https://qualite.musashino-k.jp/"),
+    ("新宿武蔵野館", "https://musashino-k.jp/"),
+    ("目黒シネマ", "http://www.megurocinema.net/"),
+    ("下高井戸シネマ", "http://www.shimotakaido-cinema.com/"),
+    ("Stranger", "https://stranger.jp/"),
+    ("テアトルシネマグループ", "https://ttcg.jp/"),
+    ("ヒューマントラストシネマ渋谷", "https://ttcg.jp/human_shibuya/"),
+    ("HUMAX CINEMA", "https://www.humax-cinema.co.jp/"),
+    ("イメージフォーラム", "http://www.imageforum.co.jp/theatre/"),
+    ("CINE QUINTO／シネクイント", "https://www.cinequinto.com/"),
+    ("ユーロスペース", "http://www.eurospace.co.jp/"),
+    ("シネマヴェーラ", "http://www.cinemavera.com/"),
+    ("ヒューマントラストシネマ有楽町", "https://ttcg.jp/human_yurakucho/"),
+    ("立川の映画館 シネマ・ワン＆シネマ・ツー｜シネマシティ", "https://cinemacity.co.jp/")
+]
+
+for name, url in theaters:
+    st.sidebar.markdown(f'• <a href="{url}" target="_blank" rel="noopener noreferrer">{name}</a>', unsafe_allow_html=True)
+
+
+# ==================================================
+# メイン画面ヘッダー
+# ==================================================
 st.title("🎬 My Cinema & Life Hub")
 
 # --------------------------------------------------
@@ -44,7 +79,6 @@ def fetch_cat_photos(limit=6):
                     if pdata.get("stickied"):
                         continue
                     img_url = pdata.get("url", "")
-                    # 画像URLの判定を拡張 (.webp や preview 等も許可)
                     if any(img_url.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]) or "i.redd.it" in img_url:
                         cat_photos.append({
                             "title": pdata.get("title", "Reddit Cat"),
@@ -194,19 +228,18 @@ def fetch_all_items():
         except Exception:
             pass
 
-    # 投稿日時が新しい順にソート（並べ替え）
     items.sort(key=lambda x: x["date"], reverse=True)
     return items
 
 
 # ==================================================
-# 1. 📸 みんなのリアル猫ちゃんギャラリー (Reddit & Bluesky)
+# 1. 📸 街と世界の猫ちゃんギャラリー
 # ==================================================
 st.header("🐾 街と世界の猫ちゃんギャラリー")
 cat_photos = fetch_cat_photos(limit=6)
 
 if cat_photos:
-    cols = st.columns(3)  # 3列に並べて表示
+    cols = st.columns(3)
     for idx, photo in enumerate(cat_photos):
         with cols[idx % 3]:
             st.image(photo["image"], use_container_width=True)
@@ -220,7 +253,7 @@ st.write("---")
 
 
 # ==================================================
-# 2. 📰 最新タイムライン (映画・展示・御朱印・多肉・ヒグチユウコ)
+# 2. 📰 最新タイムライン
 # ==================================================
 st.header("📰 最新タイムライン")
 all_items = fetch_all_items()
