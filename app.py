@@ -61,48 +61,57 @@ def parse_date(date_str):
 
 
 # --------------------------------------------------
-# Bluesky 日本の猫画像投稿 取得関数（Bluesky専用・安全版）
+# Bluesky 通信・取得処理（ブロック回避・安定化版）
+# --------------------------------------------------
+def fetch_bluesky_raw(query, limit=5):
+    url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    params = {"q": query, "limit": limit}
+    try:
+        res = requests.get(url, headers=headers, params=params, timeout=5)
+        if res.status_code == 200:
+            return res.json().get("posts", [])
+    except Exception:
+        pass
+    return []
+
+
+# --------------------------------------------------
+# 1. 猫ギャラリー用 Bluesky 取得
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
     cat_photos = []
-    try:
-        url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
-        # 検索キーワードを最適化
-        res = requests.get(url, params={"q": "猫 OR ねこ", "limit": 25}, timeout=4)
-        if res.status_code == 200:
-            for post_item in res.json().get("posts", []):
-                embed = post_item.get("embed", {})
-                img_url = None
-                
-                if "images" in embed and len(embed["images"]) > 0:
-                    img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
-                elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
-                    media = embed.get("media", {})
-                    if "images" in media and len(media["images"]) > 0:
-                        img_url = media["images"][0].get("fullsize") or media["images"][0].get("thumb")
+    posts = fetch_bluesky_raw("猫", limit=30)
+    for post_item in posts:
+        embed = post_item.get("embed", {})
+        img_url = None
+        
+        if "images" in embed and len(embed["images"]) > 0:
+            img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
+        elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
+            media = embed.get("media", {})
+            if "images" in media and len(media["images"]) > 0:
+                img_url = media["images"][0].get("fullsize") or media["images"][0].get("thumb")
 
-                if img_url:
-                    record = post_item.get("record", {})
-                    author = post_item.get("author", {})
-                    uri_parts = post_item.get("uri", "").split("/")
-                    rkey = uri_parts[-1] if uri_parts else ""
-                    handle = author.get("handle", "")
-                    post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
+        if img_url:
+            record = post_item.get("record", {})
+            author = post_item.get("author", {})
+            uri_parts = post_item.get("uri", "").split("/")
+            rkey = uri_parts[-1] if uri_parts else ""
+            handle = author.get("handle", "")
+            post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
 
-                    text = record.get("text", "")
-                    display_text = text[:35] + "..." if len(text) > 35 else (text or "愛猫の写真")
+            text = record.get("text", "")
+            display_text = text[:35] + "..." if len(text) > 35 else (text or "愛猫の写真")
 
-                    cat_photos.append({
-                        "title": display_text,
-                        "link": post_url,
-                        "image": img_url,
-                        "source": f"🦋 Bluesky (@{handle})"
-                    })
-                    if len(cat_photos) >= limit:
-                        break
-    except Exception:
-        pass
-
+            cat_photos.append({
+                "title": display_text,
+                "link": post_url,
+                "image": img_url,
+                "source": f"🦋 Bluesky (@{handle})"
+            })
+            if len(cat_photos) >= limit:
+                break
     return cat_photos
 
 
@@ -112,49 +121,39 @@ def fetch_bluesky_cat_photos(limit=6):
 def fetch_all_items():
     items = []
 
-    # --- 1. Bluesky ---
+    # --- 1. Bluesky (キーワードを簡略化してヒット率UP) ---
     bsky_queries = [
+        ("映画", "🎬 映画"),
         ("名画座", "🎬 名画座"),
-        ("早稲田松竹", "🎬 映画館"),
-        ("新文芸坐", "🎬 映画館"),
-        ("シネマカリテ", "🎬 映画館"),
-        ("武蔵野館", "🎬 映画館"),
-        ("目黒シネマ", "🎬 映画館"),
-        ("アップリンク吉祥寺", "🎬 映画館"),
         ("御朱印", "⛩️ 御朱印"),
         ("ヒグチユウコ", "🎨 ヒグチユウコ"),
         ("多肉植物", "🌵 多肉植物")
     ]
     for q, tag in bsky_queries:
-        try:
-            url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
-            res = requests.get(url, params={"q": q, "limit": 3}, timeout=3)
-            if res.status_code == 200:
-                for post_item in res.json().get("posts", []):
-                    record = post_item.get("record", {})
-                    author = post_item.get("author", {})
-                    uri_parts = post_item.get("uri", "").split("/")
-                    rkey = uri_parts[-1] if uri_parts else ""
-                    handle = author.get("handle", "")
-                    post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
-                    
-                    embed = post_item.get("embed", {})
-                    img_url = None
-                    if "images" in embed and len(embed["images"]) > 0:
-                        img_url = embed["images"][0].get("fullsize")
+        posts = fetch_bluesky_raw(q, limit=3)
+        for post_item in posts:
+            record = post_item.get("record", {})
+            author = post_item.get("author", {})
+            uri_parts = post_item.get("uri", "").split("/")
+            rkey = uri_parts[-1] if uri_parts else ""
+            handle = author.get("handle", "")
+            post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
+            
+            embed = post_item.get("embed", {})
+            img_url = None
+            if "images" in embed and len(embed["images"]) > 0:
+                img_url = embed["images"][0].get("fullsize")
 
-                    created_at = record.get("createdAt", "")
-                    items.append({
-                        "title": record.get("text", ""),
-                        "link": post_url,
-                        "image": img_url,
-                        "source": f"🦋 Bluesky ({tag})",
-                        "author": author.get("displayName") or handle,
-                        "date": parse_date(created_at),
-                        "date_str": created_at[:10] if created_at else ""
-                    })
-        except Exception:
-            pass
+            created_at = record.get("createdAt", "")
+            items.append({
+                "title": record.get("text", ""),
+                "link": post_url,
+                "image": img_url,
+                "source": f"🦋 Bluesky ({tag})",
+                "author": author.get("displayName") or handle,
+                "date": parse_date(created_at),
+                "date_str": created_at[:10] if created_at else ""
+            })
 
     # --- 2. Googleニュース ---
     news_queries = [
@@ -239,7 +238,7 @@ if cat_photos:
             st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"]}</a>', unsafe_allow_html=True)
             st.write("---")
 else:
-    st.info("※現在Blueskyから最新の猫画像投稿を探しています。少々お待ちいただくか、再読み込みをお試しください。")
+    st.warning("現在Blueskyからの猫画像の自動読み込みが一時的に制限されています。少し時間をおいて再読み込みしてみてください。")
 
 st.write("---")
 
