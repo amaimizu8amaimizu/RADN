@@ -101,6 +101,34 @@ def fetch_bluesky_raw(query, limit=5):
 
 
 # --------------------------------------------------
+# Bluesky 投稿から画像URLを漏れなく抽出する関数
+# --------------------------------------------------
+def extract_bsky_image(embed):
+    if not embed:
+        return None
+    
+    embed_type = embed.get("$type", "")
+
+    # 1. 通常の添付画像
+    if "images" in embed and len(embed["images"]) > 0:
+        return embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
+
+    # 2. 外部Webリンクのカード（サムネイル画像）
+    if "external" in embed and isinstance(embed["external"], dict):
+        return embed["external"].get("thumb")
+
+    # 3. メディア付き引用・ポスト
+    if embed_type == "app.bsky.embed.recordWithMedia#view":
+        media = embed.get("media", {})
+        if "images" in media and len(media["images"]) > 0:
+            return media["images"][0].get("fullsize") or media["images"][0].get("thumb")
+        if "external" in media and isinstance(media["external"], dict):
+            return media["external"].get("thumb")
+
+    return None
+
+
+# --------------------------------------------------
 # 1. 猫ギャラリー用 Bluesky 取得（ランダムシャッフル機能付き）
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
@@ -116,14 +144,7 @@ def fetch_bluesky_cat_photos(limit=6):
             continue
 
         embed = post_item.get("embed", {})
-        img_url = None
-        
-        if "images" in embed and len(embed["images"]) > 0:
-            img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
-        elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
-            media = embed.get("media", {})
-            if "images" in media and len(media["images"]) > 0:
-                img_url = media["images"][0].get("fullsize") or media["images"][0].get("thumb")
+        img_url = extract_bsky_image(embed)
 
         if img_url:
             author = post_item.get("author", {})
@@ -196,9 +217,7 @@ def fetch_all_items():
             post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
             
             embed = post_item.get("embed", {})
-            img_url = None
-            if "images" in embed and len(embed["images"]) > 0:
-                img_url = embed["images"][0].get("fullsize")
+            img_url = extract_bsky_image(embed)
 
             created_at = record.get("createdAt", "")
             items.append({
@@ -255,7 +274,8 @@ def fetch_all_items():
         ("御朱印", "⛩️ 御朱印"),
         ("多肉植物", "🌵 多肉植物"),
         ("かき氷", "🍧 かき氷"),
-        ("アイスクリーム", "🍦 アイス"),
+        ("アイス", "🍦 アイス"),
+        ("アイスクリーム", "🍦 アイスクリーム"),
         ("スイーツ", "🍰 スイーツ"),
         ("カフェ巡り", "☕ カフェめぐり"),
         ("グルメ", "🍽️ グルメ"),
