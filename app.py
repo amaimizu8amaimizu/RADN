@@ -33,13 +33,11 @@ for entry in feed_hatebu.entries[:5]:
     st.markdown(f'• <a href="{entry.link}" target="_blank" rel="noopener noreferrer">{entry.title}</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 4. 猫 & ヒグチユウコ 最新情報
-st.header("猫 & ヒグチユウコ 最新情報")
-st.subheader("🐈 ヒグチユウコさん情報")
+# 4. ヒグチユウコ 最新情報
+st.header("ヒグチユウコ 最新情報")
 st.markdown('• <a href="https://higuchiyuko.tokyo/" target="_blank" rel="noopener noreferrer">公式サイトのNEWS: HIGUCHI YUKO Official Website</a>', unsafe_allow_html=True)
+st.write("---")
 
+# 5. 本日の猫ちゃん
+st.header("🐾 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
-# 無料の猫画像APIを使用
-
-st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
-# 無料の猫画像APIを使用
