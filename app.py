@@ -3,7 +3,7 @@ import streamlit as st
 import feedparser
 import requests
 
-st.title("RADNの箱")
+st.title("🎬 My Cinema & Life Hub")
 
 # --------------------------------------------------
 # Bluesky 投稿取得用関数
@@ -45,7 +45,7 @@ for p in movie_classic_posts:
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 2. 🍿 映画コラム・感想（Bluesky検索）
+# 2. 🍿 映画コラム・クラシック映画の話題（Bluesky検索）
 st.header("🍿 映画コラム・クラシック映画の話題")
 movie_review_posts = get_bluesky_posts("映画 考察 OR 映画 レビュー OR シネマカリテ OR ル・シネマ", limit=5)
 for p in movie_review_posts:
@@ -63,7 +63,7 @@ for p in higuchi_posts:
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 4. 🐱 猫（Bluesky検索）
+# 4. 🐾 猫の話題（Bluesky検索）
 st.header("🐾 猫の話題")
 cat_posts = get_bluesky_posts("猫", limit=5)
 for p in cat_posts:
@@ -81,9 +81,8 @@ for p in succulent_posts:
     st.markdown(f'<a href="{p["url"]}" target="_blank" rel="noopener noreferrer">Blueskyで見る</a>', unsafe_allow_html=True)
     st.write("---")
 
-# 6. 本日の猫ちゃん（ランダム画像）
+# 6. 📷 本日の猫ちゃん（ランダム画像）
 st.header("📷 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
-# 8. 本日の猫ちゃん
 st.header("🐾 本日の猫ちゃん")
 st.image("https://cataas.com/cat", caption="リロードするたびに違う猫が出ます！", use_container_width=True)
