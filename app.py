@@ -61,11 +61,34 @@ def parse_date(date_str):
 
 
 # --------------------------------------------------
-# Bluesky 通信・取得処理（ブロック回避・安定化版）
+# Bluesky 認証（ログイン）処理
+# --------------------------------------------------
+@st.cache_data(ttl=300)  # 5分間ログイン状態を保持
+def get_bsky_token():
+    try:
+        handle = st.secrets.get("BSKY_HANDLE", "")
+        password = st.secrets.get("BSKY_PASSWORD", "")
+        if not handle or not password:
+            return None
+        
+        url = "https://bsky.social/xrpc/com.atproto.server.createSession"
+        res = requests.post(url, json={"identifier": handle, "password": password}, timeout=5)
+        if res.status_code == 200:
+            return res.json().get("accessJwt")
+    except Exception:
+        pass
+    return None
+
+# --------------------------------------------------
+# Bluesky 通信・取得処理（認証付き）
 # --------------------------------------------------
 def fetch_bluesky_raw(query, limit=5):
-    url = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    token = get_bsky_token()
+    url = "https://bsky.social/xrpc/app.bsky.feed.searchPosts"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    
     params = {"q": query, "limit": limit}
     try:
         res = requests.get(url, headers=headers, params=params, timeout=5)
@@ -81,7 +104,7 @@ def fetch_bluesky_raw(query, limit=5):
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
     cat_photos = []
-    posts = fetch_bluesky_raw("猫", limit=30)
+    posts = fetch_bluesky_raw("猫 OR ねこ", limit=30)
     for post_item in posts:
         embed = post_item.get("embed", {})
         img_url = None
@@ -121,7 +144,7 @@ def fetch_bluesky_cat_photos(limit=6):
 def fetch_all_items():
     items = []
 
-    # --- 1. Bluesky (キーワードを簡略化してヒット率UP) ---
+    # --- 1. Bluesky ---
     bsky_queries = [
         ("映画", "🎬 映画"),
         ("名画座", "🎬 名画座"),
@@ -227,18 +250,23 @@ def fetch_all_items():
 # 1. 🐾 街とSNSのリアル猫ちゃんギャラリー (Bluesky)
 # ==================================================
 st.header("🐾 Blueskyのリアル猫ちゃんギャラリー")
-cat_photos = fetch_bluesky_cat_photos(limit=6)
 
-if cat_photos:
-    cols = st.columns(3)
-    for idx, photo in enumerate(cat_photos):
-        with cols[idx % 3]:
-            st.image(photo["image"], use_container_width=True)
-            st.caption(f"**{photo['source']}**")
-            st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"]}</a>', unsafe_allow_html=True)
-            st.write("---")
+# Secrets設定がされているかチェック
+if not st.secrets.get("BSKY_HANDLE") or not st.secrets.get("BSKY_PASSWORD"):
+    st.warning("⚠️ Streamlitの「Secrets」設定にBlueskyのログイン情報が登録されていません。")
 else:
-    st.warning("現在Blueskyからの猫画像の自動読み込みが一時的に制限されています。少し時間をおいて再読み込みしてみてください。")
+    cat_photos = fetch_bluesky_cat_photos(limit=6)
+
+    if cat_photos:
+        cols = st.columns(3)
+        for idx, photo in enumerate(cat_photos):
+            with cols[idx % 3]:
+                st.image(photo["image"], use_container_width=True)
+                st.caption(f"**{photo['source']}**")
+                st.markdown(f'<a href="{photo["link"]}" target="_blank" rel="noopener noreferrer">{photo["title"]}</a>', unsafe_allow_html=True)
+                st.write("---")
+    else:
+        st.info("※現在Blueskyから最新の猫画像投稿を探しています。")
 
 st.write("---")
 
