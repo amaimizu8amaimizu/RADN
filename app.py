@@ -104,11 +104,17 @@ def fetch_bluesky_raw(query, limit=5):
 # 1. 猫ギャラリー用 Bluesky 取得（インスタ誘導除外・純粋写真のみ）
 # --------------------------------------------------
 def fetch_bluesky_cat_photos(limit=6):
+    print("\n--- 🐱 猫ギャラリー取得開始 ---")
     cat_photos = []
-    posts = fetch_bluesky_raw("#猫のいる暮らし OR #猫 OR #愛猫", limit=50)
+    
+    # クエリをより確実にヒットする単語に変更
+    query = "猫のいる暮らし"
+    posts = fetch_bluesky_raw(query, limit=50)
+    print(f"[Bluesky API] 取得レスポンス件数: {len(posts)} 件")
+
     ng_words = ["ハイキュー", "音駒", "コスプレ", "イラスト", "二次創作", "VTuber", "アクスタ", "フィギュア", "instagram.com", "インスタ"]
 
-    for post_item in posts:
+    for idx, post_item in enumerate(posts):
         record = post_item.get("record", {})
         text = record.get("text", "")
 
@@ -119,14 +125,19 @@ def fetch_bluesky_cat_photos(limit=6):
         embed = post_item.get("embed", {})
         img_url = None
         
-        # 純粋にBlueskyに直接投稿された画像のみを取得（リンクカード画像のアイコン除外）
-        if "images" in embed and len(embed["images"]) > 0:
-            img_url = embed["images"][0].get("fullsize") or embed["images"][0].get("thumb")
+        # 1. 直接投稿された画像 (app.bsky.embed.images#view)
+        if "images" in embed and isinstance(embed["images"], list) and len(embed["images"]) > 0:
+            img_obj = embed["images"][0]
+            img_url = img_obj.get("fullsize") or img_obj.get("thumb")
+            
+        # 2. レコード付きメディア (app.bsky.embed.recordWithMedia#view)
         elif embed.get("$type") == "app.bsky.embed.recordWithMedia#view":
             media = embed.get("media", {})
-            if "images" in media and len(media["images"]) > 0:
-                img_url = media["images"][0].get("fullsize") or media["images"][0].get("thumb")
+            if "images" in media and isinstance(media["images"], list) and len(media["images"]) > 0:
+                img_obj = media["images"][0]
+                img_url = img_obj.get("fullsize") or img_obj.get("thumb")
 
+        # 画像が存在する場合のみ追加
         if img_url:
             author = post_item.get("author", {})
             uri_parts = post_item.get("uri", "").split("/")
@@ -134,17 +145,28 @@ def fetch_bluesky_cat_photos(limit=6):
             handle = author.get("handle", "")
             post_url = f"https://bsky.app/profile/{handle}/post/{rkey}" if handle and rkey else "#"
 
-            display_text = text[:35] + "..." if len(text) > 35 else (text or "愛猫の写真")
+            display_text = text.replace("\n", " ")
+            display_text = display_text[:35] + "..." if len(display_text) > 35 else (display_text or "愛猫の写真")
 
-            cat_photos.append({
+            photo_data = {
                 "title": display_text,
                 "link": post_url,
                 "image": img_url,
                 "source": f"🦋 Bluesky (@{handle})"
-            })
+            }
+            cat_photos.append(photo_data)
+            print(f"  [抽出成功 #{len(cat_photos)}] タイトル: {display_text} | 投稿者: @{handle}")
+
+    print(f"[フィルタリング結果] 画像付き対象ポスト: {len(cat_photos)} 件")
 
     random.shuffle(cat_photos)
-    return cat_photos[:limit]
+    selected_photos = cat_photos[:limit]
+    
+    print(f"[最終出力] 表示件数: {len(selected_photos)} 件")
+    print("--- 🐱 猫ギャラリー取得完了 ---\n")
+    
+    return selected_photos
+
 
 
 # --------------------------------------------------
